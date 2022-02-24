@@ -11,12 +11,14 @@ int main()
 {
 	WSAData WsaData;
 
+	// 1. 원속 초기화,  DLL 로딩
 	if (WSAStartup(MAKEWORD(2, 2), &WsaData))
 	{
 		cout << "Winsock Error : " << GetLastError() << endl;
 		exit(-1);
 	}
 
+	// 2. 소켓 생성
 	SOCKET ServerSocket;
 	ServerSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (ServerSocket == INVALID_SOCKET)
@@ -25,30 +27,40 @@ int main()
 		exit(-1);
 	}
 
+	// 3. 주소세팅
 	SOCKADDR_IN ServerAddr;
 	memset(&ServerAddr, 0, sizeof(ServerAddr));
 	ServerAddr.sin_port = htons(50000);					// host to network short
 	ServerAddr.sin_family = PF_INET;					// IP V4
 	ServerAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
+	// 4. 연결 - 물리적인 연결을 Socket랑 연결
 	if (connect(ServerSocket, (SOCKADDR*)&ServerAddr, sizeof(ServerAddr)) == SOCKET_ERROR)
 	{
 		cout << "connect Error : " << GetLastError() << endl;
 		exit(-1);
 	}
 
+	// 5. 받기
 	char Buffer[1024] = { 0, };
 	int RecvLength = recv(ServerSocket, Buffer, 1024, 0);
-	if (RecvLength <= 0)
+	if (RecvLength == 0)										// 0 이면 제대로 종료
 	{
-		cout << "RecvLength : " << GetLastError() << endl;
+		cout << "Close : " << GetLastError() << endl;
+		exit(-1);
+	}
+	else if (RecvLength < 0)									//	0보다 작으면 에러
+	{
+		cout << "Error : " << GetLastError() << endl;
 		exit(-1);
 	}
 
 	cout << Buffer << endl;
 
+	// 6. 소켓 닫기
 	closesocket(ServerSocket);
 
+	// 7. 원속 정리
 	WSACleanup();
 
 	return 0;
